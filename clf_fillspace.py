@@ -31,7 +31,22 @@ class CLF(object):
         self.data = data
         self.defvals = defvals
         return self
-    def default_value(self, item, month, shop, delta = 3):
+    def default_value2(self,item,month,shop, delta=2):
+        tmp = []
+        for m in range(month - delta, month + delta + 1):
+            if m == month:
+                continue
+            if m not in self.defvals[item]:
+                continue
+            for shop in self.defvals[item][m].keys():
+                tmp.extend( self.defvals[item][m][shop] )
+        if len(tmp) < 1:
+            return 0.5
+        if len(tmp) == 1:
+            return tmp[0]
+        tmp = reduce(lambda a,b:  a + b, tmp) / len(tmp)
+        return tmp
+    def default_value(self, item, month, shop, delta = 2):
         tmp = []
         for m in range(month - delta, month + delta + 1):
             if m == month:
@@ -42,7 +57,7 @@ class CLF(object):
                 continue
             tmp.extend( self.defvals[item][m][shop] )
         if len(tmp) < 1:
-            return 0.5
+            return self.default_value2(item, month, shop) # improvement
         if len(tmp) == 1:
             return tmp[0]
         tmp = reduce(lambda a,b:  a + b, tmp) / len(tmp)
@@ -160,7 +175,7 @@ def train():
     dataset = DATA()
     X,Y,defval = dataset.data, dataset.label,dataset.defvals
     errors = []
-    for month in range(31,32):
+    for month in range(30,34):
         trainidx,testidx = split_by_month(X,month)
         trainX,trainY = X[trainidx],Y[trainidx]
         testX,testY = X[testidx],Y[testidx]
