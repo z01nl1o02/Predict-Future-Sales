@@ -31,14 +31,21 @@ class CLF(object):
         self.data = data
         self.defvals = defvals
         return self
-    def default_value(self, item, month, delta = 1):
-        tmp = self.defvals[item]
-        tmp = filter(lambda d : d[0] != month and d[0] >= month - delta and d[0] <= month + delta, tmp)
+    def default_value(self, item, month, shop, delta = 3):
+        tmp = []
+        for m in range(month - delta, month + delta + 1):
+            if m == month:
+                continue
+            if m not in self.defvals[item]:
+                continue
+            if shop not in self.defvals[item][m]:
+                continue
+            tmp.extend( self.defvals[item][m][shop] )
         if len(tmp) < 1:
             return 0.5
         if len(tmp) == 1:
-            return tmp[0][1]
-        tmp = reduce(lambda a,b: (0, a[1] + b[1]), tmp)[1] / len(tmp)
+            return tmp[0]
+        tmp = reduce(lambda a,b:  a + b, tmp) / len(tmp)
         return tmp
     def predict(self,X,Y = None, delta = 2):
         res = []
@@ -46,13 +53,13 @@ class CLF(object):
         for x in X:
             shop,item,month = x
             if item not in self.data[shop]:
-                res.append( self.default_value(item,month) )
+                res.append( self.default_value(item,month,shop) )
                 flags.append( 1 )
                 continue
             tmp = self.data[shop][item]
             tmp = filter(lambda d : d[0] != month and d[0] >= month - delta and d[0] <= month + delta, tmp)
             if len(tmp) < 1:
-                res.append( self.default_value(item,month) )
+                res.append( self.default_value(item,month,shop) )
                 flags.append(1)
                 continue
             if len(tmp) < 2:
@@ -100,18 +107,16 @@ class DATA(object):
         self.X, self.Y = [], []
         defcnts = defaultdict(dict)
         for shop, item, month, cnt in zip(shops, items, months, cnts):
-            if cnt > 20 or cnt < 0:
+            if cnt > 20:
                 continue
             self.X.append( (shop, item, month) )
             self.Y.append( cnt )
             if month not in defcnts[item]:
-                defcnts[item][month] = []
-            defcnts[item][month].append( cnt )
-        self.cnts = defaultdict(list)
-        for item in defcnts.keys():
-            for month in defcnts[item]:
-                val = np.asarray( defcnts[item][month] ).mean()
-                self.cnts[item].append( (month,val) )
+                defcnts[item][month] = {}
+            if shop not in defcnts[item][month]:
+                defcnts[item][month][shop] = []
+            defcnts[item][month][shop].append( cnt )
+        self.cnts = defcnts
         self.X = np.asarray(self.X)
         self.Y = np.asarray(self.Y)
         return 
@@ -155,7 +160,7 @@ def train():
     dataset = DATA()
     X,Y,defval = dataset.data, dataset.label,dataset.defvals
     errors = []
-    for month in range(23,31):
+    for month in range(31,32):
         trainidx,testidx = split_by_month(X,month)
         trainX,trainY = X[trainidx],Y[trainidx]
         testX,testY = X[testidx],Y[testidx]
@@ -174,6 +179,7 @@ def train():
 
 
 if __name__=="__main__":
+    train()
     predict()
 
 
