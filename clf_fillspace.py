@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
+from matplotlib import pyplot as plt
 
 from collections import defaultdict
 
@@ -31,7 +32,29 @@ class CLF(object):
         self.data = data
         self.defvals = defvals
         return self
-    def default_value(self, item, month, shop, delta = 3):
+    def default_value2(self,item,month,shop, delta=2):
+        tmp = []
+        for m in range(month - delta, month + delta + 1):
+            if m == month:
+                continue
+            if m not in self.defvals[item]:
+                continue
+            for shop in self.defvals[item][m].keys():
+                tmp.extend( self.defvals[item][m][shop] )
+        if len(tmp) < 1:
+            return 0.5
+        if len(tmp) == 1:
+            return tmp[0]
+        if 0:
+            xx = [k for k in range(len(tmp))]
+            yy = tmp
+            plt.plot(xx,yy,'bo',label='def 2')
+            plt.legend()
+            plt.show()
+        tmp = reduce(lambda a,b:  a + b, tmp) / len(tmp)
+        #tmp = sorted(tmp)[len(tmp)//2]
+        return tmp
+    def default_value(self, item, month, shop, delta = 2):
         tmp = []
         for m in range(month - delta, month + delta + 1):
             if m == month:
@@ -42,16 +65,28 @@ class CLF(object):
                 continue
             tmp.extend( self.defvals[item][m][shop] )
         if len(tmp) < 1:
-            return 0.5
+            return 0.5 #self.default_value2(item, month, shop) # improvement
         if len(tmp) == 1:
             return tmp[0]
+        if 0:
+            xx = [k for k in range(len(tmp))]
+            yy = tmp
+            plt.plot(xx,yy,'rx',label='def 1')
+            plt.legend()
+            plt.show()
         tmp = reduce(lambda a,b:  a + b, tmp) / len(tmp)
         return tmp
     def predict(self,X,Y = None, delta = 2):
         res = []
         flags = []
-        for x in X:
+        for kk,x in enumerate(X):
             shop,item,month = x
+            if item == 4840 and 0:
+                res.append(2)
+                continue
+            if item == 13381 and 0:
+                res.append(20)
+                continue
             if item not in self.data[shop]:
                 res.append( self.default_value(item,month,shop) )
                 flags.append( 1 )
@@ -108,7 +143,9 @@ class DATA(object):
         defcnts = defaultdict(dict)
         for shop, item, month, cnt in zip(shops, items, months, cnts):
             if cnt > 20:
-                continue
+                cnt = 20
+            if cnt < 0:
+                cnt = 0
             self.X.append( (shop, item, month) )
             self.Y.append( cnt )
             if month not in defcnts[item]:
@@ -160,7 +197,7 @@ def train():
     dataset = DATA()
     X,Y,defval = dataset.data, dataset.label,dataset.defvals
     errors = []
-    for month in range(31,32):
+    for month in range(33,30,-1):
         trainidx,testidx = split_by_month(X,month)
         trainX,trainY = X[trainidx],Y[trainidx]
         testX,testY = X[testidx],Y[testidx]
