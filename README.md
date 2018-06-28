@@ -4,17 +4,20 @@ kaggle competions
 [数据源](https://www.kaggle.com/c/competitive-data-science-predict-future-sales/data)
 
 
-用法:
+## 用法:
 * 下载数据源到当前目录data目录下
 * python main.py 
 * 运行结束后,得到df.test.csv,就是submission.txt, error = 0.99
 
-2016-06-26:
-好奇如何使error小于1,参考了几个kernel后,得到main.py. 其实和ML/feature engining没什么关系....
+## ## 流程图:
+![流程图](https://github.com/z01nl1o02/Predict-Future-Sales/blob/master/flowchart.png)   
+
+## 备注:
+好奇如何使error小于1,参考了几个kernel后,得到main.py 其实和ML/feature engining没什么关系
 
 让error小于1.0的关键是在训练集中增加销售量为0的样本, 以下是关键代码
--
--```
+
+```
 #insert null samples (samples not found in train.csv)
 from itertools import product
 grid = []
